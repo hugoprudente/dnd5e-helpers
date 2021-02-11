@@ -2,7 +2,58 @@ const wmFeatureDefault = "Wild Magic Surge";
 const wmToCFeatureDefault = "Tides of Chaos";
 const wmSurgeTableDefault = "Wild-Magic-Surge-Table";
 
+const MODULE = 'dnd5e-helpers';
+const PATH = `modules/${MODULE}`
+class PlayerHelperConfig extends FormApplication {
+  constructor(options={}) {
+      super(options);
+  }
+
+  /**
+   * Call app default options
+   * @override
+   */
+  static get defaultOptions() {
+      return mergeObject(super.defaultOptions, {
+          id: `${MODULE}-player-config`,
+          title: "Player Options",
+          template: `${PATH}/templates/PlayerHelperConfig.hbs`,
+          popOut: true,
+          width: 500,
+          height: 505
+      });
+  }
+
+  /**
+   * Supplies data to the template
+   */
+  async getData() {
+      return {
+          cssClass: game.user.isGM ? "editable" : "locked",
+      }
+  }
+  
+}
+
 Hooks.on('init', () => {
+
+  game.settings.registerMenu(MODULE, "playerHelpers", {
+    name: "Player Helpers",
+    label: "Player Helpers Label",
+    hint:"Player Helpers Hint",
+    icon: "fas fa-user-cog",
+    type: PlayerHelperConfig,
+    restricted: true
+  });
+
+  game.settings.register(MODULE, "playerHelpers", {
+    name: "Player Helpers",
+    scope: "world",
+    default: {},
+    type: Object,
+    config: false
+  });
+
   game.settings.register("dnd5e-helpers", "gridTemplateScaling", {
     name: game.i18n.format("DND5EH.GridTemplateScaling_name"),
     hint: game.i18n.format("DND5EH.GridTemplateScaling_hint"),
