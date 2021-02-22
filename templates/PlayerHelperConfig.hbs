@@ -1,6 +1,8 @@
 <form autocomplete="off">
     <header class="sheet-header">
-        <h1>Hello World</h1>
+        <h1>Player Helpers</h1>
     </header>
-    <p>hello world</p>
+    <label for="wmFeatureName">{{localize "DND5EH.WildMagicFeatureName_name"}}:</label>
+    <input type="text" id="wmFeatureName" name="wmFeatureName" value="{{config.wmFeatureName}}">
+    <button name="save">Save Settings</button>
 </form>

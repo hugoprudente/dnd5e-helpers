@@ -5,8 +5,8 @@ const wmSurgeTableDefault = "Wild-Magic-Surge-Table";
 const MODULE = 'dnd5e-helpers';
 const PATH = `modules/${MODULE}`
 class PlayerHelperConfig extends FormApplication {
-  constructor(options={}) {
-      super(options);
+  constructor(options = {}) {
+    super(options);
   }
 
   /**
@@ -14,25 +14,73 @@ class PlayerHelperConfig extends FormApplication {
    * @override
    */
   static get defaultOptions() {
-      return mergeObject(super.defaultOptions, {
-          id: `${MODULE}-player-config`,
-          title: "Player Options",
-          template: `${PATH}/templates/PlayerHelperConfig.hbs`,
-          popOut: true,
-          width: 500,
-          height: 505
-      });
+    return mergeObject(super.defaultOptions, {
+      id: `${MODULE}-player-config`,
+      title: "Player Options",
+      template: `${PATH}/templates/PlayerHelperConfig.hbs`,
+      popOut: true,
+      width: 500,
+      height: 200
+    });
   }
 
   /**
    * Supplies data to the template
    */
   async getData() {
-      return {
-          cssClass: game.user.isGM ? "editable" : "locked",
-      }
+    return {
+      cssClass: game.user.isGM ? "editable" : "locked",
+      config: {wmFeatureName: game.settings.get(MODULE, "playerHelpers").wmFeatureName}
+    }
   }
+
+  async saveConfig(event, html){
+
+    const wmFeatureName = html.find("input[name='wmFeatureName']")[0];
+
+    const updatedSettings = {
+      wmFeatureName: wmFeatureName.value
+    }
+
+    await game.settings.set(MODULE, "playerHelpers", updatedSettings);
+  }
+
+  async _updateObject(event, formData){
+  }
+
+  /*
+  async settingsDialog() {
+    const config = Sidekick.getSetting(SETTING_KEYS.cubPuter.config);
+    const templatePath = `${PATH}/templates/cub-puter-config.html`;
+    const content = await renderTemplate(templatePath, config);
+
+    new Dialog({
+      title: "CUBPuter Config",
+      content,
+      buttons: {
+        save: {
+          icon: `<i class="fas fa-check"></i>`,
+          label: "Save",
+          callback: async (html) => await this.saveConfig(html)
+        },
+        cancel: {
+          icon: `<i class="fas fa-times"></i>`,
+          label: "Cancel",
+          callback: () => {}
+        }
+      },
+      default: "save"
+    }).render(true);
+  }
+  */
   
+  activateListeners(html){
+    super.activateListeners(html);
+
+    const save = html.find("button[name='save']");
+
+    save.on("click", event=>this.saveConfig(event, html));
+  }
 }
 
 Hooks.on('init', () => {
@@ -40,7 +88,7 @@ Hooks.on('init', () => {
   game.settings.registerMenu(MODULE, "playerHelpers", {
     name: "Player Helpers",
     label: "Player Helpers Label",
-    hint:"Player Helpers Hint",
+    hint: "Player Helpers Hint",
     icon: "fas fa-user-cog",
     type: PlayerHelperConfig,
     restricted: true
@@ -49,9 +97,10 @@ Hooks.on('init', () => {
   game.settings.register(MODULE, "playerHelpers", {
     name: "Player Helpers",
     scope: "world",
-    default: {},
+    default: {wmFeatureName: wmFeatureDefault},
     type: Object,
-    config: false
+    config: false,
+    onChange: () => {console.log("settings changed");}
   });
 
   game.settings.register("dnd5e-helpers", "gridTemplateScaling", {
@@ -69,7 +118,7 @@ Hooks.on('init', () => {
     }
   });
 
-   /** report cover value to chat on target */
+  /** report cover value to chat on target */
   game.settings.register("dnd5e-helpers", "losOnTarget", {
     name: game.i18n.format("DND5EH.LoSOnTarget_name"),
     hint: game.i18n.format("DND5EH.LoSOnTarget_hint"),
@@ -80,7 +129,7 @@ Hooks.on('init', () => {
     choices: {
       0: game.i18n.format("DND5EH.Default_disabled"),
       1: game.i18n.format("DND5EH.LoSOnTarget_center"),
-      2: game.i18n.format( "DND5EH.LoSOnTarget_corner"),
+      2: game.i18n.format("DND5EH.LoSOnTarget_corner"),
     }
   });
 
@@ -92,7 +141,7 @@ Hooks.on('init', () => {
     default: false,
     type: Boolean,
   });
-  
+
   game.settings.register("dnd5e-helpers", "losMaskNPCs", {
     name: game.i18n.format("DND5EH.LoSMaskNPCs_name"),
     hint: game.i18n.format("DND5EH.LoSMaskNPCs_hint"),
@@ -101,7 +150,7 @@ Hooks.on('init', () => {
     default: false,
     type: Boolean
   });
-  
+
   /** should surges be tested */
   game.settings.register("dnd5e-helpers", "wmOptions", {
     name: game.i18n.format("DND5EH.WildMagicOptions_name"),
@@ -116,7 +165,7 @@ Hooks.on('init', () => {
       2: game.i18n.format("DND5EH.WildMagicOptions_more"),
       3: game.i18n.format("DND5EH.WildMagicOptions_volatile")
     }
-  });  
+  });
 
   /** name of the feature to trigger on */
   game.settings.register("dnd5e-helpers", "wmFeatureName", {
@@ -151,7 +200,7 @@ Hooks.on('init', () => {
   /** toggle result gm whisper for WM */
   game.settings.register("dnd5e-helpers", "wmWhisper", {
     name: game.i18n.format("DND5EH.WildMagicWisper_name"),
-    hint: game.i18n.format( "DND5EH.WildMagicWisper_hint"),
+    hint: game.i18n.format("DND5EH.WildMagicWisper_hint"),
     scope: "world",
     config: true,
     default: false,
@@ -166,7 +215,7 @@ Hooks.on('init', () => {
     type: Number,
     choices: {
       0: game.i18n.format("DND5EH.Default_none"),
-      1: game.i18n.format( "DND5EH.CombatReactionEnable_apply"),
+      1: game.i18n.format("DND5EH.CombatReactionEnable_apply"),
       2: game.i18n.format("DND5EH.CombatReactionEnable_remove"),
       3: game.i18n.format("DND5EH.CombatReactionEnable_both"),
     },
@@ -351,7 +400,7 @@ Hooks.on('ready', () => {
   })
 })
 
-  /** helper functions */
+/** helper functions */
 
 function IsFirstGM() {
   return game.user === game.users.find((u) => u.isGM && u.active);
@@ -364,7 +413,7 @@ function GetKeyByValue(object, value) {
 //find status effect based on passed name
 function GetStatusEffect(statusName) {
   /** Core Status Effects -- pass displayed name backwards through localization to match to status.label */
-  const { EFFECT } = game.i18n.translations;
+  const {EFFECT} = game.i18n.translations;
 
   /** find the key (will be label) from the value */
   let statusLabel = GetKeyByValue(EFFECT, statusName);
@@ -418,21 +467,21 @@ function includes_array(arr, comp) {
 
 /** \helper functions */
 /** roll on the provided table */
-function RollOnWildTable(rollType) {  
-  const wmTableName = (game.settings.get('dnd5e-helpers', 'wmTableName') !== '') 
+function RollOnWildTable(rollType) {
+  const wmTableName = (game.settings.get('dnd5e-helpers', 'wmTableName') !== '')
     ? game.settings.get('dnd5e-helpers', 'wmTableName') : wmSurgeTableDefault;
 
   if (wmTableName !== "") {
-    game.tables.getName(wmTableName).draw({ roll: null, results: [], displayChat: true, rollMode: rollType });
+    game.tables.getName(wmTableName).draw({roll: null, results: [], displayChat: true, rollMode: rollType});
   } else {
     if (game.settings.get('dnd5e-helpers', 'debug')) {
       console.log(game.i18n.format("DND5EH.WildMagicTableError"));
-    }    
+    }
   }
 }
 
-function GetTidesOfChaosFeatureName(){
-  return (game.settings.get('dnd5e-helpers', 'wmToCFeatureName') !== '') 
+function GetTidesOfChaosFeatureName() {
+  return (game.settings.get('dnd5e-helpers', 'wmToCFeatureName') !== '')
     ? game.settings.get('dnd5e-helpers', 'wmToCFeatureName') : wmToCFeatureDefault;
 }
 
@@ -461,24 +510,24 @@ async function RollForMoreSurge(spellLevel, rollType, actor) {
   const d20result = +roll["result"];
 
   if (game.settings.get('dnd5e-helpers', 'debug')) {
-    console.log(game.i18n.format("DND5EH.WildMagicConsoleMoreSurgeLog", {d20result : d20result, spellLevel : spellLevel}));
+    console.log(game.i18n.format("DND5EH.WildMagicConsoleMoreSurgeLog", {d20result: d20result, spellLevel: spellLevel}));
   }
 
   if (d20result <= spellLevel) {
     const surgesMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesSurge");
     ShowSurgeResult(surgesMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`);
     RollOnWildTable(rollType);
-    
+
     /** recharge TOC if we surged */
     const tocName = GetTidesOfChaosFeatureName();
-    if (IsTidesOfChaosSpent(actor, tocName )) {
-      return ResetTidesOfChaos(actor, tocName );
+    if (IsTidesOfChaosSpent(actor, tocName)) {
+      return ResetTidesOfChaos(actor, tocName);
     }
   } else {
     const calmMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesCalm");
     ShowSurgeResult(calmMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`);
   }
-  
+
   return;
 }
 
@@ -486,33 +535,33 @@ async function RollForMoreSurge(spellLevel, rollType, actor) {
 async function RollForVolatileSurge(spellLevel, rollType, actor) {
   const wmToCFeatureName = GetTidesOfChaosFeatureName();
   if (wmToCFeatureName !== '') {
-      
-      const tocSpent = IsTidesOfChaosSpent(actor, wmToCFeatureName); 
 
-      const d20roll = new Roll("1d20").roll();
-      const d4roll = new Roll("1d4").roll();
-      const d20result = +d20roll["result"];
+    const tocSpent = IsTidesOfChaosSpent(actor, wmToCFeatureName);
 
-      /** if tides of chaos hasn't been used then no volatile roll */
-      const d4result = tocSpent ? +d4roll["result"] : 0;
+    const d20roll = new Roll("1d20").roll();
+    const d4roll = new Roll("1d4").roll();
+    const d20result = +d20roll["result"];
 
-      if (game.settings.get('dnd5e-helpers', 'debug')) {
-        console.log(game.i18n.format("DND5EH.WildMagicConsoleVolatileSurgeLog", {d20result : d20result, spellLevel: spellLevel, d4result : d4result}));
+    /** if tides of chaos hasn't been used then no volatile roll */
+    const d4result = tocSpent ? +d4roll["result"] : 0;
+
+    if (game.settings.get('dnd5e-helpers', 'debug')) {
+      console.log(game.i18n.format("DND5EH.WildMagicConsoleVolatileSurgeLog", {d20result: d20result, spellLevel: spellLevel, d4result: d4result}));
+    }
+
+    if (d20result <= (spellLevel + d4result)) {
+      const surgesMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesSurge");
+      await ShowSurgeResult(surgesMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`, `(+[[/r ${d4result} #1d4 result]])`);
+      RollOnWildTable(rollType);
+
+      if (tocSpent) {
+        /** return the promise of the item update */
+        return ResetTidesOfChaos(actor, wmToCFeatureName);
       }
-
-      if (d20result <= (spellLevel + d4result)) {
-        const surgesMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesSurge");
-        await ShowSurgeResult(surgesMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`, `(+[[/r ${d4result} #1d4 result]])`);
-        RollOnWildTable(rollType);
-        
-        if (tocSpent){
-          /** return the promise of the item update */
-          return ResetTidesOfChaos(actor, wmToCFeatureName);
-        }
-      } else {
-        const calmMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesCalm");
-        return ShowSurgeResult(calmMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`, `(+[[/r ${d4result}  #1d4 result]])`);
-      }
+    } else {
+      const calmMsg = game.i18n.format("DND5EH.WildMagicConsoleSurgesCalm");
+      return ShowSurgeResult(calmMsg, spellLevel, `([[/r ${d20result} #1d20 result]])`, `(+[[/r ${d4result}  #1d4 result]])`);
+    }
   } else {
     if (game.settings.get('dnd5e-helpers', 'debug')) {
       console.log(game.i18n.format("DND5EH.WildMagicTidesOfChaos_error"));
@@ -525,14 +574,14 @@ async function RollForVolatileSurge(spellLevel, rollType, actor) {
 async function ShowSurgeResult(action, spellLevel, resultText, extraText = '') {
   return ChatMessage.create({
     content: game.i18n.format("DND5EH.WildMagicConsoleSurgesMessage", {action: action, spellLevel: spellLevel, extraText: extraText, resultText: resultText}),
-    speaker: ChatMessage.getSpeaker({ alias: game.i18n.format("DND5EH.WildMagicChatSpeakerName") })
+    speaker: ChatMessage.getSpeaker({alias: game.i18n.format("DND5EH.WildMagicChatSpeakerName")})
   });
 }
 
 /** is the tides of chaos feature used */
 function IsTidesOfChaosSpent(actor, wmToCFeatureName) {
   const tocItem = actor.items.getName(wmToCFeatureName);
-  
+
   if (tocItem) {
     return (tocItem.data.data.uses.value === 0);
   } else {
@@ -545,15 +594,15 @@ async function ResetTidesOfChaos(actor, wmToCFeatureName) {
   const tocItem = actor?.items.getName(wmToCFeatureName);
 
   if (tocItem) {
-      const item = await tocItem.update({ 'data.uses.value': tocItem.data.data.uses.max });
-      actor.sheet.render(false);
-      return item;
-    }    
-  
+    const item = await tocItem.update({'data.uses.value': tocItem.data.data.uses.max});
+    actor.sheet.render(false);
+    return item;
+  }
+
   return tocItem;
 }
 
-function NeedsRecharge(recharge = { value: 0, charged: false }) {
+function NeedsRecharge(recharge = {value: 0, charged: false}) {
   return (recharge.value !== null &&
     (recharge.value > 0) &&
     recharge.charged !== null &&
@@ -579,13 +628,13 @@ async function WildMagicSurge_preUpdateActor(actor, update, selectedOption) {
 
   /** find the spell level just cast */
   const spellLvlNames = ["spell1", "spell2", "spell3", "spell4", "spell5", "spell6", "spell7", "spell8", "spell9"];
-  let lvl = spellLvlNames.findIndex(name => { return getProperty(update, "data.spells." + name) });
+  let lvl = spellLvlNames.findIndex(name => {return getProperty(update, "data.spells." + name)});
 
   const preCastSlotCount = getProperty(origSlots, spellLvlNames[lvl] + ".value");
   const postCastSlotCount = getProperty(update, "data.spells." + spellLvlNames[lvl] + ".value");
   const bWasCast = preCastSlotCount - postCastSlotCount > 0;
 
-  const wmFeatureName = (game.settings.get('dnd5e-helpers', 'wmFeatureName') !== '') 
+  const wmFeatureName = (game.settings.get('dnd5e-helpers', 'wmFeatureName') !== '')
     ? game.settings.get('dnd5e-helpers', 'wmFeatureName') : wmFeatureDefault;
   const wmFeature = actor.items.find(i => i.name === wmFeatureName) !== null
 
@@ -595,7 +644,7 @@ async function WildMagicSurge_preUpdateActor(actor, update, selectedOption) {
   let promise = null;
   if (wmFeature && bWasCast && lvl > 0) {
     /** lets go baby lets go */
-    console.log(game.i18n.format("DND5EH.WildMagicConsoleSurgesroll" ));
+    console.log(game.i18n.format("DND5EH.WildMagicConsoleSurgesroll"));
 
     const rollMode = game.settings.get('dnd5e-helpers', 'wmWhisper') ? "blindroll" : "roll";
     if (selectedOption === 1) {
@@ -606,7 +655,7 @@ async function WildMagicSurge_preUpdateActor(actor, update, selectedOption) {
       promise = RollForVolatileSurge(lvl, rollMode, actor);
     }
   }
-  
+
   return promise;
 }
 
@@ -619,12 +668,12 @@ async function ResetLegAct(actor, tokenName) {
   if (legact && legact.value !== null) {
     /** only reset if needed */
     if (legact.value < legact.max) {
-      ui.notifications.info(game.i18n.format("DND5EH.CombatLegendary_notification", {max : legact.max, tokenName: tokenName}))
-      let newActor = await actor.update({ 'data.resources.legact.value': legact.max });
+      ui.notifications.info(game.i18n.format("DND5EH.CombatLegendary_notification", {max: legact.max, tokenName: tokenName}))
+      let newActor = await actor.update({'data.resources.legact.value': legact.max});
       newActor.sheet.render(false);
       return newActor;
     }
-    
+
     return actor;
   }
 }
@@ -716,16 +765,16 @@ function DrawGreatWound(actor) {
     let gwSave = await actor.rollAbilitySave("con");
     if (gwSave.total < 15) {
       const greatWoundTable = game.settings.get("dnd5e-helpers", "gwTableName");
-      ChatMessage.create({ content: game.i18n.format("DND5EH.GreatWoundDialogFailMessage", {actorName: actor.name, gwFeatureName: gwFeatureName}) });
+      ChatMessage.create({content: game.i18n.format("DND5EH.GreatWoundDialogFailMessage", {actorName: actor.name, gwFeatureName: gwFeatureName})});
       if (greatWoundTable !== "") {
-        game.tables.getName(greatWoundTable).draw({ roll: null, results: [], displayChat: true });
+        game.tables.getName(greatWoundTable).draw({roll: null, results: [], displayChat: true});
       }
       else {
-        ChatMessage.create({ content: game.i18n.format("DND5EH.GreatWoundDialogError", {gwFeatureName: gwFeatureName})});
+        ChatMessage.create({content: game.i18n.format("DND5EH.GreatWoundDialogError", {gwFeatureName: gwFeatureName})});
       }
     }
     else {
-      ChatMessage.create({ content: game.i18n.format("DND5EH.GreatWoundDialogSuccessMessage", {actorName: actor.name, gwFeatureName: gwFeatureName})});
+      ChatMessage.create({content: game.i18n.format("DND5EH.GreatWoundDialogSuccessMessage", {actorName: actor.name, gwFeatureName: gwFeatureName})});
     }
   })();
 }
@@ -736,17 +785,17 @@ function DrawGreatWound(actor) {
 function AutoProfWeapon_createOwnedItem(actor, item) {
 
   //finds item data and actor proficiencies 
-  let { name } = item;
-  let { weaponProf } = actor.data.data.traits;
+  let {name} = item;
+  let {weaponProf} = actor.data.data.traits;
   let proficient = false;
-  
+
   //if item name matches custom prof lis then prof = true
   const weaponProfList = weaponProf.custom.split(" ").map(s => s.slice(0, -1))
   if (includes_array(weaponProfList, name) || includes_array(weaponProfList, `${name}s`)) proficient = true;
 
   // update item to match prof, otherwise, leave as is (dnd5e system will handle generic profs)
   if (proficient) {
-    actor.updateOwnedItem({ _id: item._id, "data.proficient": true });
+    actor.updateOwnedItem({_id: item._id, "data.proficient": true});
     console.log(game.i18n.format("DND5EH.AutoProf_consolelogsuccess", {name: name}))
   } /* else {
     //Remove proficiency if actor is not proficient and the weapon has proficiency set.
@@ -764,32 +813,32 @@ function AutoProfWeapon_createOwnedItem(actor, item) {
 function AutoProfArmor_createOwnedItem(actor, item) {
 
   //finds item data and actor proficiencies 
-  let { name } = item;
-  let { armorProf } = actor.data.data.traits;
+  let {name} = item;
+  let {armorProf} = actor.data.data.traits;
   let proficient = false;
-  
+
   /* NOTE: I know of no examples of being granted "Studded Leather Armor" proficiency,
    *       but it does not make grammatical sense for them to be optionaly pluralized,
    *       so do not consider plurals when matching like weapons
   */
-  
+
   //if item name matches custom prof lis then prof = true
   if (includes_array(armorProf.custom.split(" ").map(s => s.slice(0, -1)), name)) proficient = true;
 
   // update item to match prof, otherwise, leave as is (dnd5e will handle generic profs)
   //For items that are not armors (trinkets, clothing) we assume prof = true 
   if (proficient) {
-    actor.updateOwnedItem({ _id: item._id, "data.proficient": true });
+    actor.updateOwnedItem({_id: item._id, "data.proficient": true});
     console.log(game.i18n.format("DND5EH.AutoProf_consolelogsuccess", {name: name}))
-  } 
+  }
 }
 
 /**Auto Prof Tools*/
 function AutoProfTool_createOwnedItem(actor, item) {
 
   //finds item data and actor proficiencies 
-  let { name } = item;
-  let { toolProf } = actor.data.data.traits;
+  let {name} = item;
+  let {toolProf} = actor.data.data.traits;
   let proficient = false;
 
   //pass_name is here to match some of the toolProf strings
@@ -803,7 +852,7 @@ function AutoProfTool_createOwnedItem(actor, item) {
   // update item to match prof
   //For items that are not armors (trinkets, clothing) we assume prof = true 
   if (proficient) {
-    actor.updateOwnedItem({ _id: item._id, "data.proficient": 1 });
+    actor.updateOwnedItem({_id: item._id, "data.proficient": 1});
     console.log(game.i18n.format("DND5EH.AutoProf_consolelogsuccess", {name: name}))
   } else {
     ui.notifications.notify(game.i18n.format("DND5EH.AutoProf_consolelogfail", {name: name}));
@@ -826,10 +875,10 @@ async function Regeneration(token) {
     actorMax: token.actor.data.data.attributes.hp.max,
   }
 
-  if(token.data.actorLink === true){
+  if (token.data.actorLink === true) {
     data.tokenHP = token.actor.data.data.attributes.hp.value;
   }
-  
+
   // if token isnt damaged, set tokenHP to max
   if (data.tokenHP == undefined) {
     data.tokenHP = data.actorMax
@@ -852,7 +901,7 @@ async function Regeneration(token) {
           callback: () => {
             let regenRoll = new Roll(regenAmout).roll().total;
             token.actor.applyDamage(- regenRoll);
-            ChatMessage.create({ content: game.i18n.format( "DND5EH.AutoRegenDialog_healingmessage", {tokenName: token.name, regenRoll: regenRoll}), whisper: ChatMessage.getWhisperRecipients('gm').map(o => o.id) });
+            ChatMessage.create({content: game.i18n.format("DND5EH.AutoRegenDialog_healingmessage", {tokenName: token.name, regenRoll: regenRoll}), whisper: ChatMessage.getWhisperRecipients('gm').map(o => o.id)});
           }
         },
         two: {
@@ -866,7 +915,7 @@ async function Regeneration(token) {
 
 //quick undead fort check, just checks change in np, not total damage
 async function UndeadFortCheckQuick(tokenData, update, options) {
-  
+
   let data = {
     actorData: canvas.tokens.get(tokenData._id).actor.data,
     updateData: update,
@@ -888,7 +937,7 @@ async function UndeadFortCheckQuick(tokenData, update, options) {
         one: {
           label: game.i18n.format("DND5EH.UndeadFort_quickdialogprompt1"),
           callback: () => {
-            token.update({ hp: 0 }, { skipUndeadCheck: true })
+            token.update({hp: 0}, {skipUndeadCheck: true})
             ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_insantdeathmessage"))
             return;
           },
@@ -896,13 +945,13 @@ async function UndeadFortCheckQuick(tokenData, update, options) {
         two: {
           label: game.i18n.format("DND5EH.UndeadFort_quickdialogprompt2"),
           callback: async () => {
-            let { total } = await token.actor.rollAbilitySave("con")
+            let {total} = await token.actor.rollAbilitySave("con")
             if (total >= (5 + hpChange)) {
               ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_surivalmessage", {tokenName: token.name, total: total}))
-              token.update({ "actorData.data.attributes.hp.value": 1 }, { skipUndeadCheck: true });
+              token.update({"actorData.data.attributes.hp.value": 1}, {skipUndeadCheck: true});
             } else if (total < (5 + hpChange)) {
               ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_deathmessage", {tokenName: token.name, total: total}))
-              token.update({ "actorData.data.attributes.hp.value": 0 }, { skipUndeadCheck: true })
+              token.update({"actorData.data.attributes.hp.value": 0}, {skipUndeadCheck: true})
             }
           },
         },
@@ -938,7 +987,7 @@ function UndeadFortCheckSlow(tokenData, update, options) {
         one: {
           label: game.i18n.format("DND5EH.UndeadFort_quickdialogprompt1"),
           callback: () => {
-            token.update({ hp: 0 }, { skipUndeadCheck: true })
+            token.update({hp: 0}, {skipUndeadCheck: true})
             ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_insantdeathmessage"))
             return;
           },
@@ -946,14 +995,14 @@ function UndeadFortCheckSlow(tokenData, update, options) {
         two: {
           label: game.i18n.format("DND5EH.UndeadFort_quickdialogprompt2"),
           callback: async (html) => {
-            let { total } = await token.actor.rollAbilitySave("con")
+            let {total} = await token.actor.rollAbilitySave("con")
             let number = Number(html.find("#num")[0].value);
             if (total >= (5 + number)) {
               ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_surivalmessage", {tokenName: token.name, total: total}))
-              token.update({ "actorData.data.attributes.hp.value": 1 }, { skipUndeadCheck: true });
+              token.update({"actorData.data.attributes.hp.value": 1}, {skipUndeadCheck: true});
             } else if (total < (5 + number)) {
               ui.notifications.notify(game.i18n.format("DND5EH.UndeadFort_deathmessage", {tokenName: token.name, total: total}))
-              token.update({ "actorData.data.attributes.hp.value": 0 }, { skipUndeadCheck: true })
+              token.update({"actorData.data.attributes.hp.value": 0}, {skipUndeadCheck: true})
             }
           },
         },
@@ -965,7 +1014,7 @@ function UndeadFortCheckSlow(tokenData, update, options) {
 
 /** apply a reaction status to the token if the item looks like it should use a reaction (requires active combat) */
 function ReactionApply(castingActor, castingToken, itemId) {
-  
+
   if (itemId !== undefined) {
     const reactionStatus = game.settings.get('dnd5e-helpers', 'cbtReactionStatus');
     let statusEffect = GetStatusEffect(reactionStatus);
@@ -999,10 +1048,10 @@ function ReactionApply(castingActor, castingToken, itemId) {
     let effectToken = canvas.tokens.get(castingToken)
 
     let ownedItem = effectToken.actor.getOwnedItem(itemId);
-    const { activation } = ownedItem.labels;
+    const {activation} = ownedItem.labels;
 
     /** strictly defined activation types. 0 action (default) will not trigger, which is by design */
-    const isAction = activation === game.i18n.format( "DND5EH.CombatReactionStatus_actionname")
+    const isAction = activation === game.i18n.format("DND5EH.CombatReactionStatus_actionname")
     const isReaction = activation === game.i18n.format("DND5EH.CombatReactionStatus_reactionname")
 
     let shouldApply = isReaction || (isAction && (currentCombatant !== castingToken));
@@ -1069,11 +1118,11 @@ async function ReactionRemove(currentToken) {
 function OpenWounds(actorName, woundType) {
   const owFeatureName = game.settings.get("dnd5e-helpers", "owFeatureName");
   const openWoundTable = game.settings.get('dnd5e-helpers', 'owTable')
-  ChatMessage.create({ content: game.i18n.format("DND5EH.OpenWoundFeaturename_chatoutput", {actorName: actorName, owFeatureName: owFeatureName, woundType: woundType})})
+  ChatMessage.create({content: game.i18n.format("DND5EH.OpenWoundFeaturename_chatoutput", {actorName: actorName, owFeatureName: owFeatureName, woundType: woundType})})
   if (openWoundTable !== "") {
-    game.tables.getName(openWoundTable).draw({ roll: null, results: [], displayChat: true });
+    game.tables.getName(openWoundTable).draw({roll: null, results: [], displayChat: true});
   } else {
-    ChatMessage.create({ content: game.i18n.format("DND5EH.OpenWoundTableName_error", {owFeatureName: owFeatureName}) });
+    ChatMessage.create({content: game.i18n.format("DND5EH.OpenWoundTableName_error", {owFeatureName: owFeatureName})});
   }
 }
 
@@ -1083,7 +1132,7 @@ Hooks.on("preUpdateActor", async (actor, update, options, userId) => {
   let hp = getProperty(update, "data.attributes.hp.value");
   let spells = getProperty(update, "data.spells");
   if (game.settings.get('dnd5e-helpers', 'debug')) {
-    console.log(game.i18n.format("DND5EH.Hooks_preUpdateActor_updatelog", {actorName:actor.name, hp: hp, spells: spells}))
+    console.log(game.i18n.format("DND5EH.Hooks_preUpdateActor_updatelog", {actorName: actor.name, hp: hp, spells: spells}))
   }
   /** WM check, are we enabled for the current user? */
   const wmSelectedOption = game.settings.get('dnd5e-helpers', 'wmOptions');
@@ -1293,7 +1342,7 @@ Hooks.on("deleteCombat", async (combat, settings, id) => {
 
 
 /** Measured template 5/5/5 scaling */
-Hooks.on("preCreateMeasuredTemplate", async (scene,template)=>{
+Hooks.on("preCreateMeasuredTemplate", async (scene, template) => {
 
 
   /** range 0-3
@@ -1340,7 +1389,7 @@ Hooks.on("preCreateMeasuredTemplate", async (scene,template)=>{
     template.direction = 45;
   }
 });
-    
+
 
 /**
  * Serves as a container for cover data, which is as agnostic as possible, allowing for system extensions
@@ -1349,17 +1398,17 @@ Hooks.on("preCreateMeasuredTemplate", async (scene,template)=>{
  * @class CoverData
  */
 class CoverData {
-  constructor(sourceToken, targetToken, visibleCorners, mostObscuringTile, mostObscuringToken){
+  constructor(sourceToken, targetToken, visibleCorners, mostObscuringTile, mostObscuringToken) {
     this.SourceToken = sourceToken;
     this.TargetToken = targetToken;
     this.VisibleCorners = visibleCorners;
     this.TileCover = mostObscuringTile;
     this.TokenCover = mostObscuringToken;
-    
+
     // @todo this should possibly be a different class, will need a pass when my cover api is better
     this.Summary = {
       Text: "**UNPROCESSED**",
-      Source:  "**NONE**",
+      Source: "**NONE**",
       FinalCoverLevel: -1,
       FinalCoverEntity: null
     }
@@ -1372,7 +1421,7 @@ class CoverData {
    * @return {Int}
    * @memberof CoverData
    */
-  static VisibleCornersToCoverLevel(visibleCorners){
+  static VisibleCornersToCoverLevel(visibleCorners) {
     switch (visibleCorners) {
       case 0: return 3;
       case 1: return 2;
@@ -1402,17 +1451,17 @@ class CoverData {
   }
 
   /** tokenCoverData = {level: number, source: string, entity: token} */
-  static SanitizeNPCNames(tokenCoverData){
+  static SanitizeNPCNames(tokenCoverData) {
 
     /** if we are told to hide NPC names and an NPC token is providing cover */
-    if (game.settings.get('dnd5e-helpers', 'losMaskNPCs') && 
-        tokenCoverData.level > -1 &&
-        (tokenCoverData.entity?.actor?.data.type ?? "") == "npc"){
-      
+    if (game.settings.get('dnd5e-helpers', 'losMaskNPCs') &&
+      tokenCoverData.level > -1 &&
+      (tokenCoverData.entity?.actor?.data.type ?? "") == "npc") {
+
       /** change the source of the cover to be a generic "creature" */
       tokenCoverData.source = game.i18n.format("DND5EH.LoSMaskNPCs_sourceMask");
     }
-    
+
     return tokenCoverData;
   }
 
@@ -1423,27 +1472,27 @@ class CoverData {
    * @todo implement in CoverData5e
    * @memberof CoverData
    */
-  FinalizeData(){
+  FinalizeData() {
     /** always prefer line of sight because its more accurate at the moment (>= instead of >) */
     const losCoverLevel = CoverData.VisibleCornersToCoverLevel(this.VisibleCorners);
-    
+
     /** assume LOS will be the main blocker */
-    let internalCoverData = { level: losCoverLevel, source: `${this.VisibleCorners} visible corners`, entity: null };
-    
+    let internalCoverData = {level: losCoverLevel, source: `${this.VisibleCorners} visible corners`, entity: null};
+
     /** prepare the secondary blocker information */
-    const tileCoverData = { level: this.TileCover?.getFlag('dnd5e-helpers', 'coverLevel') ?? -1, source: `an intervening object`, entity: this.TileCover };
+    const tileCoverData = {level: this.TileCover?.getFlag('dnd5e-helpers', 'coverLevel') ?? -1, source: `an intervening object`, entity: this.TileCover};
     const obstructionTranslation = game.i18n.format("DND5EH.LoS_obsruct")
-    const tokenCoverData = { level: !!this.TokenCover ? 1 : -1, source: `${this.TokenCover?.name ?? ""} ${obstructionTranslation}`, entity: this.TokenCover };
-    
+    const tokenCoverData = {level: !!this.TokenCover ? 1 : -1, source: `${this.TokenCover?.name ?? ""} ${obstructionTranslation}`, entity: this.TokenCover};
+
     /** prefer walls -> tiles -> tokens in that order */
-    if (tileCoverData.level > internalCoverData.level){
+    if (tileCoverData.level > internalCoverData.level) {
       internalCoverData = tileCoverData;
     }
-    
-    if (tokenCoverData.level > internalCoverData.level){
+
+    if (tokenCoverData.level > internalCoverData.level) {
       internalCoverData = CoverData.SanitizeNPCNames(tokenCoverData);
     }
-    
+
     this.Summary.FinalCoverEntity = internalCoverData.entity;
     this.Summary.FinalCoverLevel = internalCoverData.level;
     this.Summary.Source = internalCoverData.source;
@@ -1465,10 +1514,10 @@ class CoverData {
     }
 
     /** sanitize an NPC target */
-    const sanitizeNPC = function (token){
+    const sanitizeNPC = function (token) {
       const targetName = token.actor?.data.type === "npc" &&
-                       game.settings.get('dnd5e-helpers', 'losMaskNPCs') ? game.i18n.format("DND5EH.LoSMaskNPCs_targetMask"): token.name;
-      
+        game.settings.get('dnd5e-helpers', 'losMaskNPCs') ? game.i18n.format("DND5EH.LoSMaskNPCs_targetMask") : token.name;
+
       return targetName;
     }
 
@@ -1486,23 +1535,23 @@ class CoverData {
 
 
 async function onTargetToken(user, target, onOff) {
-  /** bail immediately if LOS calc is disabled */ 
-  if(game.settings.get('dnd5e-helpers', 'losOnTarget') < 1) { return; }
+  /** bail immediately if LOS calc is disabled */
+  if (game.settings.get('dnd5e-helpers', 'losOnTarget') < 1) {return;}
 
   /** currently only concerned with adding a target for the current user */
   if (!onOff || user.id !== game.userId) {
-    return;  
+    return;
   }
-  
-  for( const selected of canvas.tokens.controlled ) {
+
+  for (const selected of canvas.tokens.controlled) {
     let coverData = await selected.computeTargetCover(target);
-    
+
     /** if we got valid cover data back, finalize and output results */
-    if (coverData){
+    if (coverData) {
       coverData.FinalizeData();
       const content = coverData.toMessageContent();
       /** whisper the message if we are being a cautious GM */
-      if (game.user.isGM && game.settings.get('dnd5e-helpers', 'losMaskNPCs')){
+      if (game.user.isGM && game.settings.get('dnd5e-helpers', 'losMaskNPCs')) {
         ChatMessage.create({
           content: content,
           whisper: ChatMessage.getWhisperRecipients('GM')
@@ -1514,10 +1563,10 @@ async function onTargetToken(user, target, onOff) {
       }
     }
   }
-  
+
 }
 
-async function DrawDebugRays(drawingList){
+async function DrawDebugRays(drawingList) {
   for (let squareRays of drawingList) {
     await canvas.drawings.createMany(squareRays);
   }
@@ -1531,44 +1580,44 @@ async function DrawDebugRays(drawingList){
  * @param {Token} token
  * @return {{GridPoints: [{x: Number, y: Number},...]}, {Squares: [[{x: Number, y: Number},...],...]}} 
  */
-function generateTokenGrid(token){
+function generateTokenGrid(token) {
 
   /** operate at the origin, then translate at the end */
   const tokenBounds = [token.w, token.h];
-  
+
   /** use token bounds as the limiter */
   let boundingBoxes = [];
   let gridPoints = [];
-  
+
   /** @todo this is hideous. I think a flatmap() or something is what i really want to do */
 
   /** stamp the points out left to right, top to bottom */
-  for(let y = 0; y < tokenBounds[1]; y+=canvas.grid.size) {
-    for(let x = 0; x < tokenBounds[0]; x+=canvas.grid.size) {
-      gridPoints.push([x,y]);
-      
+  for (let y = 0; y < tokenBounds[1]; y += canvas.grid.size) {
+    for (let x = 0; x < tokenBounds[0]; x += canvas.grid.size) {
+      gridPoints.push([x, y]);
+
       /** create the transformed bounding box. we dont have to do a final pass for that */
       boundingBoxes.push([
         [token.x + x, token.y + y], [token.x + x + canvas.grid.size, token.y + y],
         [token.x + x, token.y + y + canvas.grid.size], [token.x + x + canvas.grid.size, token.y + y + canvas.grid.size]]);
     }
 
-    gridPoints.push([token.width,y]);
+    gridPoints.push([token.width, y]);
   }
-  
+
   /** the final grid point row in the token bounds will not be added */
-  for(let x = 0; x < tokenBounds[0]; x+=canvas.grid.size) {
-      gridPoints.push([x,token.height]);
+  for (let x = 0; x < tokenBounds[0]; x += canvas.grid.size) {
+    gridPoints.push([x, token.height]);
   }
-    
+
   /** stamp the final point, since we stopped short (handles non-integer sizes) */
   gridPoints.push([token.width, token.height]);
-  
+
   /** offset the entire grid to the token's absolute position */
-  gridPoints = gridPoints.map( localPoint => {
+  gridPoints = gridPoints.map(localPoint => {
     return [localPoint[0] + token.x, localPoint[1] + token.y];
   })
-  
+
   return {GridPoints: gridPoints, Squares: boundingBoxes};
 }
 
@@ -1581,47 +1630,47 @@ function generateTokenGrid(token){
  * @param {boolean} [visualize=false]
  * @return {*} 
  */
-Token.prototype.computeTargetCover = async function (targetToken = null, 
-                                                     mode = game.settings.get('dnd5e-helpers', 'losOnTarget'),
-                                                     includeTiles = game.settings.get('dnd5e-helpers', 'losOnTarget') > 0,
-                                                     includeTokens = game.settings.get('dnd5e-helpers', 'losWithTokens'),
-                                                     visualize = false) { 
+Token.prototype.computeTargetCover = async function (targetToken = null,
+  mode = game.settings.get('dnd5e-helpers', 'losOnTarget'),
+  includeTiles = game.settings.get('dnd5e-helpers', 'losOnTarget') > 0,
+  includeTokens = game.settings.get('dnd5e-helpers', 'losWithTokens'),
+  visualize = false) {
   const myToken = this;
 
   /** if we were not provided a target token, grab the first one the current user has targeted */
   targetToken = !!targetToken ? targetToken : game.user.targets.values().next().value;
 
-  if (!targetToken) { ui.noficiations.error(game.i18n.format("DND5EH.LoS_notargeterror")); return false; }
+  if (!targetToken) {ui.noficiations.error(game.i18n.format("DND5EH.LoS_notargeterror")); return false;}
 
   /** dont compute cover on self */
-  if(myToken.id == targetToken.id){return false;}
+  if (myToken.id == targetToken.id) {return false;}
 
   /** generate token grid points */
   /** if we have been called we are computing LOS, use the requested LOS mode (center vs 4 corners) */
   const myTestPoints = mode > 1 ? generateTokenGrid(myToken).GridPoints : [[myToken.center.x, myToken.center.y]];
   const theirTestSquares = generateTokenGrid(targetToken).Squares;
 
-  const results = myTestPoints.map( xyPoint => {
-    
+  const results = myTestPoints.map(xyPoint => {
+
     /** convert the box entries to num visible corners of itself */
-    let individualTests = theirTestSquares.map( square => {
-      return ( pointToSquareCover(xyPoint,square,visualize));
+    let individualTests = theirTestSquares.map(square => {
+      return (pointToSquareCover(xyPoint, square, visualize));
     });
-    
+
     /** return the most number of visible corners */
     return Math.max.apply(Math, individualTests);
   });
-  
-    
+
+
   const bestVisibleCorners = Math.max.apply(Math, results);
-  
-  if(_debugLosRays.length > 0){
+
+  if (_debugLosRays.length > 0) {
     await DrawDebugRays(_debugLosRays);
     _debugLosRays = [];
-  } 
+  }
 
   const bestCover = CoverFromObjects(myToken, targetToken, includeTiles, includeTokens);
-  
+
   return new CoverData(myToken, targetToken, bestVisibleCorners, bestCover?.bestTile, bestCover?.bestToken);
 }
 
@@ -1645,7 +1694,7 @@ function pointToSquareCover(sourcePoint, targetSquare, visualize = false) {
 
   /** Debug visualization */
   if (visualize) {
-    let debugSightLines = sightLines.targets.map( target => [sightLines.source, target]);
+    let debugSightLines = sightLines.targets.map(target => [sightLines.source, target]);
 
     const myCornerDebugRays = debugSightLines.map(ray => {
       return {
@@ -1673,11 +1722,11 @@ function pointToSquareCover(sourcePoint, targetSquare, visualize = false) {
   }
 
   let hitResults = sightLines.targets.map(target => {
-    const ray = new Ray({ x: sightLines.source[0], y: sightLines.source[1] }, { x: target[0], y: target[1] });
+    const ray = new Ray({x: sightLines.source[0], y: sightLines.source[1]}, {x: target[0], y: target[1]});
     return WallsLayer.getRayCollisions(ray, options);
   })
 
-  const numCornersVisible = hitResults.reduce((total,x) => (x==false ? total+1 : total), 0)
+  const numCornersVisible = hitResults.reduce((total, x) => (x == false ? total + 1 : total), 0)
 
   return numCornersVisible;
 }
@@ -1706,7 +1755,8 @@ function CollideAgainstObjects(ray, objectList) {
 
     return !!boxGroup.find(boxRay => {
       return ray.intersectSegment(boxRay) !== false;
-    })});
+    })
+  });
 
   return hitTiles;
 }
@@ -1722,53 +1772,53 @@ function CoverFromObjects(sourceToken, targetToken, includeTiles, includeTokens)
   /** center to center allows us to run alongside cover calc
     * otherwise we should include cover in the optimal search of cover... */
   const ray = new Ray(sourceToken.center, targetToken.center);
-  
+
   /** create the container to optionally populate with results based on config */
   let objectHitResults = {tiles: null, tokens: null};
 
-  if (includeTiles){
+  if (includeTiles) {
     /** collect "blocker" tiles (this could be cached on preCreateTile or preUpdateTile) */
     const coverTiles = canvas.tiles.placeables.filter(tile => tile.getFlag('dnd5e-helpers', 'coverLevel') ?? 0 > 0);
 
     /** hits.length is number of blocker tiles hit */
-    objectHitResults.tiles = CollideAgainstObjects(ray, coverTiles);  
+    objectHitResults.tiles = CollideAgainstObjects(ray, coverTiles);
   }
-  
-  if(includeTokens){
+
+  if (includeTokens) {
     /** collect tokens that are not ourselves OR the target token */
     const coverTokens = canvas.tokens.placeables.filter(token => token.id !== sourceToken.id && token.id !== targetToken.id)
     objectHitResults.tokens = CollideAgainstObjects(ray, coverTokens);
-  } 
+  }
 
   /** using reduce on an empty array with no starting value is a no go
    *  a starting value (fake tile) is also a no go
    *  so we test and early return null instead.
    */
-  const maxCoverLevelTile = objectHitResults.tiles?.length ?? 0 > 0 ? objectHitResults.tiles.reduce( (bestTile, currentTile) => {
-    return bestTile?.getFlag('dnd5e-helpers','coverLevel') ?? -1 > currentTile?.getFlag('dnd5e-helpers','coverLevel') ?? -1 ? bestTile : currentTile;
+  const maxCoverLevelTile = objectHitResults.tiles?.length ?? 0 > 0 ? objectHitResults.tiles.reduce((bestTile, currentTile) => {
+    return bestTile?.getFlag('dnd5e-helpers', 'coverLevel') ?? -1 > currentTile?.getFlag('dnd5e-helpers', 'coverLevel') ?? -1 ? bestTile : currentTile;
   }) : null;
-  
+
   /** at the moment, we dont care what we hit, since all creatures give 1/2 cover */
   const maxCoverToken = objectHitResults.tokens?.length ?? 0 > 0 ? objectHitResults.tokens[0] : null;
-  
+
   return {bestTile: maxCoverLevelTile, bestToken: maxCoverToken}
 }
 
 /** attaches the cover dropdown to the tile dialog */
-function onRenderTileConfig (tileConfig, html) {
-  
+function onRenderTileConfig(tileConfig, html) {
+
   /** 0 = disabled, get out of here if we are disabled */
-  if(game.settings.get('dnd5e-helpers', 'losOnTarget') < 1) { return; }
+  if (game.settings.get('dnd5e-helpers', 'losOnTarget') < 1) {return;}
 
   const currentCoverType = tileConfig.object.getFlag('dnd5e-helpers', 'coverLevel');
-  
+
   /** anchor our new dropdown at the bottom of the dialog */
   const saveButton = html.find($('button[type="submit"]'));
   const coverTranslation = game.i18n.format("DND5EH.LoS_providescover");
   const noCover = game.i18n.format("DND5EH.LoS_nocover")
-  const halfCover =game.i18n.format("DND5EH.LoS_halfcover")
-  const threeQuaterCover =game.i18n.format("DND5EH.LoS_34cover")
-  const fullCover =game.i18n.format("DND5EH.LoS_fullcover")
+  const halfCover = game.i18n.format("DND5EH.LoS_halfcover")
+  const threeQuaterCover = game.i18n.format("DND5EH.LoS_34cover")
+  const fullCover = game.i18n.format("DND5EH.LoS_fullcover")
   let checkboxHTML = `<div class="form-group"><label${coverTranslation}</label>
                         <select name="flags.dnd5e-helpers.coverLevel" data-dtype="Number">
                           <option value="0" ${currentCoverType == 0 ? 'selected' : ''}>${noCover}</option>
@@ -1777,21 +1827,21 @@ function onRenderTileConfig (tileConfig, html) {
                           <option value="3" ${currentCoverType == 3 ? 'selected' : ''}>${fullCover}</option>
                         </select>
                       </div>`;
-  
-  html.css("height","auto");
+
+  html.css("height", "auto");
 
   saveButton.before(checkboxHTML);
 }
 
-function onPreCreateTile(scene, tileData, options, id){
-  const halfPath ="modules/dnd5e-helpers/assets/cover-tiles/half-cover.svg";
+function onPreCreateTile(scene, tileData, options, id) {
+  const halfPath = "modules/dnd5e-helpers/assets/cover-tiles/half-cover.svg";
   const threePath = "modules/dnd5e-helpers/assets/cover-tiles/three-quarters-cover.svg";
   /** what else could it be? */
-  if (tileData.type == "Tile" && (tileData.img == halfPath || tileData.img == threePath)){
+  if (tileData.type == "Tile" && (tileData.img == halfPath || tileData.img == threePath)) {
     /** its our sample tiles -- set the flag structure */
     const tileCover = tileData.img == halfPath ? 1 : 2;
 
-    if (!tileData.flags){
+    if (!tileData.flags) {
       tileData.flags = {};
     }
 
